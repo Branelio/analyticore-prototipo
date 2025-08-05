@@ -1,20 +1,12 @@
-# Archivo de configuración de Render Blueprint
-
 services:
-  # Servicio de Base de Datos PostgreSQL
-  - type: pserv
-    name: analyticore-db
-    plan: free
-    region: oregon
-    
-  # Servicio de Submisión (Python)
+  # Servicio de Análisis (Python)
   - type: web
     name: analyticore-python
-    # IMPORTANTE: Eliminamos 'env: python' para que Render use Docker
+    env: python
     region: oregon
     plan: free
     dockerContext: ./python-service
-    dockerCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+    ports: 8000
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -28,27 +20,36 @@ services:
   # Servicio de Análisis (Java)
   - type: web
     name: analyticore-java
-    # IMPORTANTE: Eliminamos 'env: java' para que Render use Docker
+    env: java
     region: oregon
     plan: free
-    dockerContext: ./java-service
+    dockerContext: ./java-service/analysis-service # Ruta corregida según tu estructura
     dockerCommand: java -jar app.jar
+    ports: 8080
     envVars:
       - key: DATABASE_URL
         fromDatabase:
           name: analyticore-db
           property: connectionString
 
-  # Frontend (React con Nginx)
+  # Frontend (React)
   - type: web
     name: analyticore-frontend
-    # IMPORTANTE: Eliminamos 'env: static' para que Render use Docker
+    env: static
     region: oregon
     plan: free
     dockerContext: ./frontend
-    dockerCommand: nginx -g "daemon off;"
+    ports: 80
     envVars:
       - key: REACT_APP_API_BASE_URL
         fromService:
           name: analyticore-python
           property: httpsUri
+
+  # Base de Datos (PostgreSQL)
+  - type: database
+    name: analyticore-db
+    region: oregon
+    plan: free
+    databaseName: analyticore_db_fh10
+    ipAllowList: [] # Puedes agregar tu IP si quieres conectar localmente
