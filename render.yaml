@@ -10,12 +10,11 @@ services:
   # Servicio de Submisión (Python)
   - type: web
     name: analyticore-python
-    env: python
+    # IMPORTANTE: Eliminamos 'env: python' para que Render use Docker
     region: oregon
     plan: free
     dockerContext: ./python-service
     dockerCommand: uvicorn main:app --host 0.0.0.0 --port 8000
-    # ¡Importante! Se eliminó la sección 'ports' de aquí
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -29,12 +28,11 @@ services:
   # Servicio de Análisis (Java)
   - type: web
     name: analyticore-java
-    env: java
+    # IMPORTANTE: Eliminamos 'env: java' para que Render use Docker
     region: oregon
     plan: free
     dockerContext: ./java-service
     dockerCommand: java -jar app.jar
-    # ¡Importante! Se eliminó la sección 'ports' de aquí
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -44,12 +42,11 @@ services:
   # Frontend (React con Nginx)
   - type: web
     name: analyticore-frontend
-    env: static
+    # IMPORTANTE: Eliminamos 'env: static' para que Render use Docker
     region: oregon
     plan: free
     dockerContext: ./frontend
     dockerCommand: nginx -g "daemon off;"
-    # ¡Importante! Se eliminó la sección 'ports' de aquí
     envVars:
       - key: REACT_APP_API_BASE_URL
         fromService:
