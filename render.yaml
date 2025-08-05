@@ -52,7 +52,7 @@ services:
     dockerContext: ./frontend
     dockerCommand: nginx -g "daemon off;"
     ports:
-      - port: 8080
+      - port: 80
     envVars:
       - key: REACT_APP_API_BASE_URL
         fromService:
