@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware # <-- NUEVA IMPORTACIÓN
 from pydantic import BaseModel
 import uuid
 import os
@@ -13,10 +14,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL no está configurada")
 
-# Se usa la URL que Render configura automáticamente
 JAVA_SERVICE_URL = os.getenv("JAVA_SERVICE_URL")
 if not JAVA_SERVICE_URL:
-    # Esto es solo para desarrollo local fuera de Render
     JAVA_SERVICE_URL = "http://localhost:8080" 
 
 # --- 2. Configuración de la base de datos ---
@@ -42,6 +41,19 @@ Base.metadata.create_all(bind=engine)
 # --- 4. Inicialización de la aplicación FastAPI ---
 app = FastAPI()
 
+# --- Habilitar CORS para permitir peticiones desde el frontend ---
+origins = [
+    "https://analyticore-frontend-xmp0.onrender.com"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Función para la inyección de dependencias de la sesión de la DB
 def get_db():
     db = SessionLocal()
@@ -62,7 +74,6 @@ class JobStatusResponse(BaseModel):
 
 # --- 6. Endpoints de la API ---
 
-# Endpoint raíz para verificar que el servicio está funcionando (soluciona el error 404)
 @app.get("/")
 def read_root():
     return {"message": "¡Servicio de Python operativo y listo para recibir peticiones!"}
@@ -73,7 +84,6 @@ def submit_job(submission: TextSubmission, db: Session = Depends(get_db)):
         if not submission.text:
             raise HTTPException(status_code=400, detail="El texto no puede estar vacío")
 
-        # 1. Crea el registro en la base de datos
         new_job = Job(text_to_analyze=submission.text)
         db.add(new_job)
         db.commit()
@@ -81,7 +91,6 @@ def submit_job(submission: TextSubmission, db: Session = Depends(get_db)):
         
         job_id_str = str(new_job.job_id)
 
-        # 2. Llama al servicio de Java para iniciar el análisis
         try:
             response = requests.post(
                 f"{JAVA_SERVICE_URL}/analyze",
@@ -90,7 +99,6 @@ def submit_job(submission: TextSubmission, db: Session = Depends(get_db)):
             response.raise_for_status()
             print(f"Solicitud de análisis enviada para el trabajo {job_id_str}")
         except requests.exceptions.RequestException as e:
-            # Si el servicio de Java falla, actualizamos el estado del trabajo a ERROR
             new_job.status = "ERROR"
             db.commit()
             raise HTTPException(status_code=500, detail=f"Error al llamar al servicio de análisis: {e}")
@@ -114,5 +122,4 @@ def get_job_status(job_id: uuid.UUID, db: Session = Depends(get_db)):
             keywords=job.keywords
         )
     finally:
-        # El Depends(get_db) ya maneja el cierre de la conexión, no es necesario aquí
         pass
