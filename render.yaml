@@ -4,8 +4,8 @@ services:
   # Servicio de Base de Datos PostgreSQL
   - type: pserv
     name: analyticore-db
-    plan: free # Puedes usar un plan de pago si necesitas más rendimiento
-    region: oregon # Elige la región que mejor se adapte a tus necesidades
+    plan: free
+    region: oregon
     
   # Servicio de Submisión (Python)
   - type: web
@@ -13,10 +13,9 @@ services:
     env: python
     region: oregon
     plan: free
-    dockerCommand: uvicorn main:app --host 0.0.0.0 --port 8000
     dockerContext: ./python-service
-    ports:
-      - port: 8000
+    dockerCommand: uvicorn main:app --host 0.0.0.0 --port 8000
+    # ¡Importante! Se eliminó la sección 'ports' de aquí
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -33,10 +32,9 @@ services:
     env: java
     region: oregon
     plan: free
-    dockerCommand: java -jar app.jar
     dockerContext: ./java-service
-    ports:
-      - port: 8080
+    dockerCommand: java -jar app.jar
+    # ¡Importante! Se eliminó la sección 'ports' de aquí
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -51,8 +49,7 @@ services:
     plan: free
     dockerContext: ./frontend
     dockerCommand: nginx -g "daemon off;"
-    ports:
-      - port: 80
+    # ¡Importante! Se eliminó la sección 'ports' de aquí
     envVars:
       - key: REACT_APP_API_BASE_URL
         fromService:
